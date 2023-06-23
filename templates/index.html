@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resume Search</title>
+    <style>
+        * {
+            margin: 0;
+        }
+        .container {
+            border: 1px solid black;
+            overflow: scroll;
+            height: 90vh;
+            width: 45%;
+            margin: 0px;
+            float: left;
+        }
+        .card {
+            box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 8px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .card:hover {
+            box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        object {
+            float: right;
+            width: 45%;
+            height: 90vh;
+            margin-bottom: 10px;
+        }
+        body {
+            background-image: url("https://htmlcolorcodes.com/assets/images/html-color-codes-color-tutorials-hero.jpg");
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-blend-mode: darken;
+        }
+        i:hover {
+            cursor: grab;
+        }
+    </style>
+    <!-- Option 1: Include in HTML -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <h1>Resume Search</h1>
+    <form action="/" method="post">
+        <input type="text" name="search" placeholder="Search for or">
+        <input type="text" name="search1" placeholder="Search for and">
+        <input type="text" name="search2" placeholder="Search for not">
+        <input type="submit" value="Search">
+    </form>
+    <i onclick="downloadAllPDFs()" class="bi bi-arrow-down-circle"></i>
+    {% if results %}
+        <h3>Search Results:</h3>
+        <div class="container">
+            {% for result in results %}
+                <div class="card" onclick="openPDF('{{ result.hash_id }}')">
+                    Email: {{ result.email }}<br>
+                    Mobile Number: {{ result.mobile_number }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <object id="pdf-container" data="" type="application/pdf"></object>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script>
+        function openPDF(hash_id) {
+            const pdfUrl = "../static/" + hash_id + ".pdf";
+            document.getElementById("pdf-container").data = pdfUrl;
+        }
+
+        function downloadAllPDFs() {
+            const results = [{% for result in results %}'{{ result.hash_id }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+            const pdfUrls = results.map(hash_id => "../static/" + hash_id + ".pdf");
+
+            let zip = new JSZip();
+            let count = 0;
+
+            pdfUrls.forEach((url, index) => {
+                fetch(url)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        zip.file("pdf_" + (index + 1) + ".pdf", blob);
+                        count++;
+
+                        if (count === pdfUrls.length) {
+                            zip.generateAsync({ type: "blob" }).then(blob => {
+                                const downloadLink = document.createElement("a");
+                                downloadLink.href = URL.createObjectURL(blob);
+                                downloadLink.download = "pdfs.zip";
+                                document.body.appendChild(downloadLink);
+                                downloadLink.click();
+                                document.body.removeChild(downloadLink);
+                            });
+                        }
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
